@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as C from './content'
-import { MODS, ROUTES } from './panel/geometry'
+import { ASG, MODS, ROUTES, SLOT, SLOTS } from './panel/geometry'
 import { SCRIPTS, stateAt } from './panel/scenes'
 import { totales } from './ui/CostBars'
 
@@ -25,6 +25,43 @@ describe('contenido del Brief', () => {
           for (const m of [...(b.patch?.focus ?? []), ...Object.keys(b.patch?.lamps ?? {})]) expect(mods.has(m), `${id}: módulo ${m}`).toBe(true)
         }
     expect(() => C.ESCENAS.forEach(e => stateAt(e.id, e.pasos.length - 1))).not.toThrow()
+  })
+
+  it('al terminar cada paso, todo módulo que toca una ruta del paso está encendido', () => {
+    // Segmentos de una ruta ortogonal 'M x y H x V y …'.
+    const segmentos = (d: string) => {
+      const out: { x1: number; y1: number; x2: number; y2: number }[] = []
+      let x = 0
+      let y = 0
+      for (const m of d.matchAll(/([MHV])(\d+(?:\.\d+)?)(?: (\d+(?:\.\d+)?))?/g)) {
+        const a = Number(m[2])
+        if (m[1] === 'M') {
+          x = a
+          y = Number(m[3])
+          continue
+        }
+        const [nx, ny] = m[1] === 'H' ? [a, y] : [x, a]
+        out.push({ x1: Math.min(x, nx), y1: Math.min(y, ny), x2: Math.max(x, nx), y2: Math.max(y, ny) })
+        x = nx
+        y = ny
+      }
+      return out
+    }
+    // Una EC2 cuenta como encendida si lo está el ASG.
+    const cajas = [
+      ...Object.entries(MODS).map(([id, m]) => ({ id, ...m, foco: [id] })),
+      { id: 'asg', ...ASG, foco: ['asg'] },
+      ...[...SLOTS.a, ...SLOTS.b].map(s => ({ id: s.id, x: SLOT.x, y: s.y, w: SLOT.w, h: SLOT.h, foco: [s.id, 'asg'] })),
+    ]
+    for (const e of C.ESCENAS)
+      e.pasos.forEach((_, i) => {
+        const s = stateAt(e.id, i)
+        for (const r of s.now)
+          for (const g of segmentos(ROUTES[r]))
+            for (const c of cajas)
+              if (g.x1 <= c.x + c.w && g.x2 >= c.x && g.y1 <= c.y + c.h && g.y2 >= c.y)
+                expect(c.foco.some(f => s.focus.includes(f)), `${e.id} paso ${i + 1}: ${r} toca ${c.id}`).toBe(true)
+      })
   })
 
   it('decisiones, restricciones y escenas se referencian entre sí', () => {

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DECISIONES, ESCENAS, ESLABONES, PIEZAS, RESTRICCIONES, type PiezaId } from '../content'
 import { GHOSTS, MODS, modsDe } from './geometry'
-import { hidePackets, playStep, reduced } from './motion'
+import { playStep, reduced, resetMotion } from './motion'
 import { Panel } from './Panel'
-import { stateAt } from './scenes'
+import { stateAt, stepStart } from './scenes'
 import { ADAPT_VACIO, type Adapt, type PanelState, type Tag } from './state'
 import { Icon } from '../ui/Icon'
 
@@ -61,7 +61,7 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
   const go = useCallback((scene: number, step: number, animate: boolean) => {
     tl.current?.kill()
     window.clearTimeout(timer.current)
-    hidePackets(svgRef.current)
+    resetMotion(svgRef.current)
     posRef.current = { scene, step }
     setPos({ scene, step })
     escribirUrl(scene, step)
@@ -71,7 +71,7 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
       if (autoRef.current) timer.current = window.setTimeout(() => avanzar(), lectura(ESCENAS[scene].pasos[step].texto))
       return
     }
-    const from = stateAt(id, step - 1)
+    const from = stepStart(id, step)
     setPanel(from)
     tl.current = playStep(svgRef.current, id, step, from, setPanel)
     tl.current.eventCallback('onComplete', () => {
@@ -143,8 +143,13 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
     else void stageRef.current?.requestFullscreen?.()
   }
 
+  // Entrar o salir de adaptación corta la animación en curso y deja el paso en su estado final.
   const toggleAdapt = () => {
     setAuto(false)
+    tl.current?.kill()
+    resetMotion(svgRef.current)
+    const { scene, step } = posRef.current
+    setPanel(stateAt(IDS[scene], step))
     setAdapt(a => ({ ...a, on: !a.on }))
   }
 
@@ -240,6 +245,16 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
               <small> / 10:00</small>
             </span>
           )}
+          <button className={`switch${adapt.on ? ' on' : ''}`} onClick={toggleAdapt} aria-pressed={adapt.on}>
+            <span className="switch-knob" aria-hidden="true" />
+            <span>{adapt.on ? 'Adaptación' : 'Operación'}</span>
+          </button>
+          <button className="key" onClick={presentar} aria-label={presenting ? 'Salir de pantalla completa' : 'Presentar en pantalla completa'}>
+            <Icon n={presenting ? 'shrink' : 'expand'} />
+          </button>
+          <button className="key" onClick={() => setHelp(h => !h)} aria-label="Atajos de teclado" aria-expanded={help}>
+            <Icon n="keys" />
+          </button>
         </div>
         <div className="scenes">
           {ESCENAS.map((e, i) => (
@@ -291,13 +306,16 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
                 <Icon n="restart" />
               </button>
             </div>
-            <ol className="logger" aria-label="Registro de eventos">
-              {logs.map((l, i) => (
-                <li key={`${pos.scene}-${i}-${l.t}`} className={i === logs.length - 1 ? 'new' : ''}>
-                  <time>{l.h}</time> {l.t}
-                </li>
-              ))}
-            </ol>
+            <div className="reg">
+              <p className="logger-k">Registrador · simulación con los supuestos S1 a S5</p>
+              <ol className="logger" aria-label="Registro de eventos">
+                {logs.map((l, i) => (
+                  <li key={`${pos.scene}-${i}-${l.t}`} className={i === logs.length - 1 ? 'new' : ''}>
+                    <time>{l.h}</time> {l.t}
+                  </li>
+                ))}
+              </ol>
+            </div>
           </>
         ) : (
           <div className="adapt">
@@ -373,19 +391,6 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
               {d.id}
             </button>
           ))}
-        </div>
-
-        <div className="desk-foot">
-          <button className={`switch${adapt.on ? ' on' : ''}`} onClick={toggleAdapt} aria-pressed={adapt.on}>
-            <span className="switch-knob" aria-hidden="true" />
-            <span>{adapt.on ? 'Adaptación' : 'Operación'}</span>
-          </button>
-          <button className="key" onClick={presentar} aria-label={presenting ? 'Salir de pantalla completa' : 'Presentar en pantalla completa'}>
-            <Icon n={presenting ? 'shrink' : 'expand'} />
-          </button>
-          <button className="key" onClick={() => setHelp(h => !h)} aria-label="Atajos de teclado" aria-expanded={help}>
-            <Icon n="keys" />
-          </button>
         </div>
 
         {help && (

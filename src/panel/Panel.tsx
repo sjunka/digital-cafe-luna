@@ -17,17 +17,24 @@ interface Props {
 
 const PRINT_ROUTES = ['cli-cf', 'cf-alb', 'alb-a1', 'a1-rdsa', 'app-s3', 's3-lambda', 'lambda-logs']
 const TAG_TXT = { mantener: 'Mantener', cambiar: 'Cambiar', quitar: 'Quitar' } as const
+// Lo que queda dentro de us-east-1a: si la AZ cae, su cuerpo se raya y el rótulo sigue legible.
+const ZONA_A = new Set(['alb', 'nat', 'rdsa', 'ec2a1', 'ec2a2', 'ec2a3'])
+const H_LIVE = 740
 
 export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], svgRef }: Props) {
   const uid = useId().replace(/:/g, '')
   const live = variant === 'live'
   const focusOn = live && state.focus.length > 0
   const routes = live ? state.routes : PRINT_ROUTES
+  const now = live ? state.now : PRINT_ROUTES
   const clickable = live && adapt?.on
+  const hatch = `url(#hatch-${uid})`
+  const caida = (id: string) => (state.failAz && ZONA_A.has(id) ? { fill: hatch } : undefined)
 
-  const cls = (id: string, base: string) => {
+  // Baja saliencia para lo que no participa del paso; un módulo en falla nunca se atenúa.
+  const cls = (id: string, base: string, lampId = id) => {
     const parts = [base]
-    if (focusOn && !state.focus.includes(id)) parts.push('dim')
+    if (focusOn && !state.focus.includes(id) && state.lamps[lampId] !== 'fault') parts.push('dim')
     if (hl.includes(id)) parts.push('hl')
     if (clickable) parts.push('pick')
     return parts.join(' ')
@@ -55,10 +62,13 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
     return MODS[id].s
   }
 
+  const routeCls = (id: string, base: string, lit: string[]) =>
+    `${base}${lit.includes(id) ? (base === 'route-past' ? ' on' : ' now') : ''}${state.bad.includes(id) ? ' bad' : ''}${id === 'sync' ? ' sync' : ''}`
+
   return (
     <svg
       ref={svgRef}
-      viewBox={live ? '0 0 1000 722' : '0 0 1000 646'}
+      viewBox={live ? `0 0 1000 ${H_LIVE}` : '0 0 1000 646'}
       className={`panel panel-${variant}${state.failAz ? ' az-caida' : ''}`}
       role={live ? 'group' : 'img'}
       aria-label="Arquitectura de Digital Café Luna en us-east-1: CloudFront, ALB, Auto Scaling Group en dos zonas, RDS Multi-AZ y reportes por evento con Lambda"
@@ -74,7 +84,12 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
         </pattern>
       </defs>
 
-      <rect width="1000" height={live ? 722 : 646} className="board" fill={live ? `url(#tiles-${uid})` : undefined} />
+      {/* En vivo el mosaico sigue más allá del viewBox: si el tablero se ajusta al alto de la ventana, los lados no quedan lisos. */}
+      {live ? (
+        <rect x={-1000} width={3000} height={H_LIVE} className="board" fill={`url(#tiles-${uid})`} />
+      ) : (
+        <rect width="1000" height="646" className="board" />
+      )}
 
       {/* Zonas: región, VPC y una franja por AZ con su placa grabada */}
       <rect {...box(ZONAS.region)} className="zone region" />
@@ -102,19 +117,37 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
         )
       })}
 
-      {/* Vías fijas y rutas que se iluminan */}
+      {/* AZ fuera de servicio: el rayado va debajo de vías y módulos, así los rótulos se leen completos */}
+      <rect
+        x={ZONAS.a.x + 26}
+        y={ZONAS.a.y + 2}
+        width={ZONAS.a.w - 28}
+        height={ZONAS.a.h - 4}
+        fill={hatch}
+        className={`fail${state.failAz ? ' on' : ''}`}
+      />
+
+      {/* Vías fijas y rutas. Lo ya recorrido queda como hilo ámbar dentro de la vía; la ruta del paso lleva
+          borde oscuro y núcleo ámbar grueso, y se dibuja detrás del paquete. */}
       {TRACKS.map((t, i) => (
         <path key={i} d={t.d} className={t.dash ? 'track dash' : 'track'} />
       ))}
       {Object.entries(ROUTES).map(([id, d]) => (
-        <path
-          key={id}
-          d={d}
-          data-route={id}
-          pathLength={id === 'sync' ? undefined : 1}
-          className={`route${routes.includes(id) ? ' on' : ''}${state.bad.includes(id) ? ' bad' : ''}${id === 'sync' ? ' sync' : ''}${id.startsWith('att') ? ' att' : ''}`}
-        />
+        <path key={id} d={d} data-route={id} pathLength={id === 'sync' ? undefined : 1} className={routeCls(id, 'route-past', routes)} />
       ))}
+      {Object.entries(ROUTES).map(([id, d]) => (
+        <path key={id} d={d} data-route={id} pathLength={1} className={routeCls(id, 'route-case', now)} />
+      ))}
+      {Object.entries(ROUTES).map(([id, d]) => (
+        <path key={id} d={d} data-route={id} pathLength={id === 'sync' ? undefined : 1} className={routeCls(id, 'route', now)} />
+      ))}
+
+      {/* Paquetes: viajan sobre la ruta y desaparecen dentro de cada módulo que atraviesan */}
+      <g className="packets">
+        {Array.from({ length: 14 }, (_, i) => (
+          <rect key={i} className="pkt" x="-6" y="-6" width="12" height="12" rx="2" opacity="0" />
+        ))}
+      </g>
 
       {/* Auto Scaling Group: marco y seis ranuras */}
       <g className={cls('asg', 'asg')} {...pick('asg')}>
@@ -125,15 +158,15 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
             {state.read.asg}
           </text>
         )}
-        {adapt?.tags.asg && <TagMark x={ASG.x + 70} y={ASG.y - 12} tag={adapt.tags.asg} />}
+        {adapt?.tags.asg && <TagMark x={ASG.x + 70} y={ASG.y + ASG.h - 8} tag={adapt.tags.asg} />}
       </g>
       {(['a', 'b'] as const).flatMap(az =>
         SLOTS[az].map((s, i) => {
           const on = i < state.ec2[az === 'a' ? 0 : 1]
           const lamp = state.lamps[s.id] ?? 'off'
           return (
-            <g key={s.id} className={`${cls(focusOn && state.focus.includes('asg') ? 'asg' : s.id, 'slot')} ${on ? 'on' : 'off'}`}>
-              <rect x={SLOT.x} y={s.y} width={SLOT.w} height={SLOT.h} rx="2" className="slot-body" />
+            <g key={s.id} className={`${cls(focusOn && state.focus.includes('asg') ? 'asg' : s.id, 'slot', s.id)} ${on ? 'on' : 'off'}`}>
+              <rect x={SLOT.x} y={s.y} width={SLOT.w} height={SLOT.h} rx="2" className="slot-body" style={on ? caida(s.id) : undefined} />
               <text x={SLOT.x + 8} y={s.y + 20} className="slot-t">{on ? 'EC2' : 'libre'}</text>
               <text x={SLOT.x + 40} y={s.y + 20} className="slot-s">{on && !state.read[s.id] ? 't3.small' : ''}</text>
               {on && state.read[s.id] && (
@@ -156,7 +189,7 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
         const read = state.read[id]
         return (
           <g key={id} className={`${cls(id, 'mod')}${m.ext ? ' ext' : ''} mod-${id}`} {...pick(id)}>
-            <rect x={m.x} y={m.y} width={m.w} height={m.h} rx="3" className="mod-body" />
+            <rect x={m.x} y={m.y} width={m.w} height={m.h} rx="3" className="mod-body" style={caida(id)} />
             {small || tall ? (
               <>
                 <text x={m.x + m.w / 2} y={m.y + (small && !tall ? m.h / 2 + (m.s ? -2 : 5) : 22)} textAnchor="middle" className="mod-t">
@@ -187,7 +220,8 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
                 {read}
               </text>
             )}
-            {adapt?.tags[id] && <TagMark x={m.x + 4} y={m.y - 12} tag={adapt.tags[id]} />}
+            {/* La tarjeta cuelga del borde inferior: arriba taparía el CIDR de la subred */}
+            {adapt?.tags[id] && <TagMark x={m.x + 4} y={m.y + m.h - 8} tag={adapt.tags[id]} />}
           </g>
         )
       })}
@@ -208,7 +242,7 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
           )
         })}
 
-      {/* Placas de decisión */}
+      {/* Placas de decisión sobre los módulos */}
       {BADGES.map((b, i) => (
         <g key={i} className={`badge${(live && state.badges.includes(b.d)) || hlBadges.includes(b.d) ? ' on' : ''}`}>
           <rect x={b.x} y={b.y} width="22" height="14" rx="2" />
@@ -216,9 +250,8 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
         </g>
       ))}
 
-      {/* AZ fuera de servicio */}
+      {/* Placa de la AZ fuera de servicio */}
       <g className={`fail${state.failAz ? ' on' : ''}`} aria-hidden={!state.failAz}>
-        <rect x={ZONAS.a.x + 26} y={ZONAS.a.y + 2} width={ZONAS.a.w - 28} height={ZONAS.a.h - 4} fill={`url(#hatch-${uid})`} />
         <rect x={548} y={ZONAS.a.y - 10} width="170" height="18" rx="2" className="fail-plate" />
         <text x={633} y={ZONAS.a.y + 3} textAnchor="middle" className="fail-t">AZ fuera de servicio</text>
       </g>
@@ -236,7 +269,7 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
           )
         })}
 
-      <Legend />
+      <Legend live={live} />
 
       {!live &&
         PASOS_FIG.map(p => (
@@ -247,12 +280,6 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
         ))}
 
       {live && <Instruments state={state} />}
-
-      <g className="packets">
-        {Array.from({ length: 14 }, (_, i) => (
-          <rect key={i} className="pkt" x="-5" y="-5" width="10" height="10" rx="1.5" opacity="0" />
-        ))}
-      </g>
     </svg>
   )
 }
@@ -280,29 +307,42 @@ function TagMark({ x, y, tag }: { x: number; y: number; tag: keyof typeof TAG_TX
   )
 }
 
-function Legend() {
-  const x = 162
-  const y = 392
-  const rows: [string, string][] = [
-    ['ok', 'en servicio'],
-    ['warn', 'cambiando'],
-    ['fault', 'falla o bloqueo'],
-    ['standby', 'en espera'],
-  ]
+// Columna izquierda, entre la pasarela y el atacante: ninguna ruta pasa por ahí.
+// En papel las lámparas no se encienden y solo hay una ruta: la leyenda dice solo eso.
+function Legend({ live }: { live: boolean }) {
+  const x = 12
+  const y = 194
+  const rows: [string, string][] = live
+    ? [
+        ['ok', 'en servicio'],
+        ['warn', 'cambiando'],
+        ['fault', 'falla o bloqueo'],
+        ['standby', 'en espera'],
+      ]
+    : []
+  const r = y + 29 + rows.length * 14 // primera fila de rutas
   return (
     <g className="legend">
       <rect x={x} y={y} width="122" height="17" className="plate" />
       <text x={x + 7} y={y + 12.5} className="plate-t">Lectura</text>
       {rows.map(([l, t], i) => (
         <g key={l}>
-          <circle cx={x + 7} cy={y + 30 + i * 15} r="5" className="lamp" data-l={l} />
-          <text x={x + 18} y={y + 34 + i * 15} className="legend-t">{t}</text>
+          <circle cx={x + 7} cy={y + 29 + i * 14} r="5" className="lamp" data-l={l} />
+          <text x={x + 18} y={y + 33 + i * 14} className="legend-t">{t}</text>
         </g>
       ))}
-      <path d={`M${x} ${y + 92} H${x + 14}`} pathLength={1} className="route on legend-route" />
-      <text x={x + 18} y={y + 96} className="legend-t">ruta activa</text>
-      <rect x={x} y={y + 102} width="16" height="11" rx="2" className="legend-badge" />
-      <text x={x + 18} y={y + 111} className="legend-t">decisión D1 a D5</text>
+      <path d={`M${x} ${r} H${x + 14}`} pathLength={1} className="route-case now legend-route" />
+      <path d={`M${x} ${r} H${x + 14}`} pathLength={1} className="route now legend-route" />
+      <text x={x + 18} y={r + 4} className="legend-t">{live ? 'ruta del paso' : 'ruta de una compra'}</text>
+      {live && (
+        <>
+          <path d={`M${x} ${r + 14} H${x + 14}`} className="track" />
+          <path d={`M${x} ${r + 14} H${x + 14}`} pathLength={1} className="route-past on legend-route" />
+          <text x={x + 18} y={r + 18} className="legend-t">ya recorrida</text>
+        </>
+      )}
+      <rect x={x} y={r + (live ? 23 : 9)} width="16" height="11" rx="2" className="legend-badge" />
+      <text x={x + 18} y={r + (live ? 32 : 18)} className="legend-t">decisión D1 a D5</text>
     </g>
   )
 }
@@ -316,14 +356,17 @@ function Instruments({ state }: { state: PanelState }) {
   ]
   return (
     <g className="instruments">
+      {/* Lo que marcan medidores y anunciadores sale de los supuestos del Brief, no de una cuenta real */}
+      <rect x={12} y={646} width="318" height="16" className="plate" />
+      <text x={19} y={658} className="plate-t">Simulación · valores de los supuestos S1 a S5</text>
       {meters.map((m, i) => {
         const x = 12 + i * 122
         return (
           <g key={m.k}>
-            <text x={x} y={664} className="meter-k">{m.k}</text>
-            <rect x={x} y={670} width="112" height="42" rx="3" className="meter-win" />
-            <text x={x + 104} y={702} textAnchor="end" className="meter-ghost">888</text>
-            <Num x={x + 104} y={702} v={m.v} />
+            <text x={x} y={682} className="meter-k">{m.k}</text>
+            <rect x={x} y={688} width="112" height="42" rx="3" className="meter-win" />
+            <text x={x + 104} y={720} textAnchor="end" className="meter-ghost">888</text>
+            <Num x={x + 104} y={720} v={m.v} />
           </g>
         )
       })}
@@ -332,9 +375,9 @@ function Instruments({ state }: { state: PanelState }) {
         const on = state.alarms.includes(a.id)
         return (
           <g key={a.id} className={`ann${on ? ' on' : ''}`}>
-            <rect x={x} y={654} width="76" height="58" rx="3" className="ann-win" />
-            <text x={x + 38} y={679} textAnchor="middle" className="ann-t">{a.texto}</text>
-            <text x={x + 38} y={697} textAnchor="middle" className="ann-a">{a.accion}</text>
+            <rect x={x} y={672} width="76" height="58" rx="3" className="ann-win" />
+            <text x={x + 38} y={697} textAnchor="middle" className="ann-t">{a.texto}</text>
+            <text x={x + 38} y={715} textAnchor="middle" className="ann-a">{a.accion}</text>
           </g>
         )
       })}

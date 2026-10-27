@@ -74,9 +74,9 @@ export const TRACKS: { d: string; dash?: boolean }[] = [
   ...[225, 261, 297, 415, 451, 487].map(y => ({ d: `M500 ${y} H508` })),
   { d: 'M492 215 H476' },
   { d: 'M648 225 H668' },
-  { d: 'M648 451 H668' },
+  { d: 'M648 415 H668' },
   { d: 'M770 262 V388', dash: true },
-  { d: 'M648 342 H786' },
+  { d: 'M642 234 H655 V342 H786' },
   { d: 'M830 342 H835 V185 H840' },
   { d: 'M905 220 V262' },
   { d: 'M935 262 V220' },
@@ -95,15 +95,15 @@ export const ROUTES: Record<string, string> = {
   'alb-a1': 'M418 256 H500 V225 H508',
   'alb-b1': 'M418 452 H500 V415 H508',
   'a1-rdsa': 'M642 225 H668',
-  'b2-rdsb': 'M642 451 H668',
+  'b1-rdsb': 'M642 415 H668',
   sync: 'M770 262 V388',
-  'app-s3': 'M648 342 H835 V185 H840',
+  'app-s3': 'M642 234 H655 V342 H835 V185 H840', // sale de la EC2 que atendió el pedido
   's3-lambda': 'M905 220 V262',
   'lambda-s3': 'M935 262 V220',
   'lambda-logs': 'M905 324 V366',
   'cw-sns': 'M342 566 V556 H915 V508',
-  'att-alb': 'M132 350 H334 V256 H348',
-  'att-data': 'M132 372 H146 V520 H306',
+  'att-alb': 'M132 350 H334 V256 H340',
+  'att-data': 'M132 372 H146 V520 H300',
   dr: 'M786 440 H790 V544 H72 V494',
 }
 
@@ -116,15 +116,15 @@ export const BLOCKS: Record<string, { x: number; y: number; lx: number; ly: numb
 
 // Placas de decisión sobre los módulos.
 export const BADGES: { d: string; x: number; y: number }[] = [
-  { d: 'D1', x: 258, y: 41 },
-  { d: 'D1', x: 600, y: 183 },
-  { d: 'D2', x: 626, y: 183 },
-  { d: 'D2', x: 760, y: 185 },
-  { d: 'D3', x: 392, y: 185 },
-  { d: 'D3', x: 786, y: 559 },
-  { d: 'D4', x: 196, y: 559 },
-  { d: 'D4', x: 426, y: 559 },
-  { d: 'D5', x: 956, y: 255 },
+  { d: 'D1', x: 258, y: 29 },
+  { d: 'D1', x: 598, y: 166 },
+  { d: 'D2', x: 624, y: 166 },
+  { d: 'D2', x: 766, y: 166 },
+  { d: 'D3', x: 456, y: 166 },
+  { d: 'D3', x: 762, y: 571 },
+  { d: 'D4', x: 172, y: 571 },
+  { d: 'D4', x: 402, y: 571 },
+  { d: 'D5', x: 956, y: 236 },
 ]
 
 // Números de una compra en la figura del Brief.

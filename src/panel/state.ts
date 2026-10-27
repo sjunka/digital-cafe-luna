@@ -14,6 +14,7 @@ export interface PanelState {
   lamps: Record<string, Lamp>
   read: Record<string, string> // lectura corta junto a la lámpara
   routes: string[] // rutas iluminadas
+  now: string[] // rutas recorridas en este paso: se dibujan gruesas; las de pasos anteriores quedan como hilo
   bad: string[] // rutas iluminadas en rojo (tráfico rechazado)
   ec2: [number, number] // instancias en servicio en 1a y 1b
   failAz: boolean
@@ -36,6 +37,7 @@ export const NORMAL: PanelState = {
   lamps: {},
   read: {},
   routes: [],
+  now: [],
   bad: [],
   ec2: [1, 1],
   failAz: false,

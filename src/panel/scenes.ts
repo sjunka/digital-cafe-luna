@@ -32,7 +32,7 @@ export const SCRIPTS: Record<string, Script> = {
   compra: {
     base: {},
     steps: [
-      [{ flow: ['cli-cf'], patch: { focus: ['clientes', 'cloudfront', 's3web'], lamps: { cloudfront: 'ok' }, read: { cloudfront: 'HIT' }, badges: ['D1'] } }],
+      [{ flow: ['cli-cf'], patch: { focus: ['clientes', 'cloudfront'], lamps: { cloudfront: 'ok' }, read: { cloudfront: 'HIT' }, badges: ['D1'] } }],
       [{ flow: ['cf-alb'], patch: { focus: ['cloudfront', 'igw', 'alb'], lamps: { alb: 'ok' }, read: { alb: '/api' }, badges: ['D3'] } }],
       [
         { flow: ['alb-a1'], patch: { focus: ['alb', 'asg', 'rdsa', 'rdsb'], lamps: { ec2a1: 'ok' } } },
@@ -40,8 +40,8 @@ export const SCRIPTS: Record<string, Script> = {
         { flow: ['sync'], patch: { lamps: { rdsb: 'standby' }, read: { rdsb: 'COPIA' }, badges: ['D2'] } },
       ],
       [
-        { flow: ['pas-cf', 'cf-alb', 'alb-a1'], patch: { focus: ['pasarela', 'alb', 'asg'], read: { ec2a1: 'PAGO OK' } } },
-        { flow: ['app-s3'], patch: { focus: ['asg', 'gwe', 's3ped'], lamps: { s3ped: 'ok' }, read: { s3ped: 'incoming/1042' } } },
+        { flow: ['pas-cf', 'cf-alb', 'alb-a1'], patch: { focus: ['pasarela', 'cloudfront', 'igw', 'alb', 'asg'], read: { ec2a1: 'PAGO OK' } } },
+        { flow: ['app-s3'], patch: { focus: ['pasarela', 'cloudfront', 'igw', 'alb', 'asg', 'gwe', 's3ped'], lamps: { s3ped: 'ok' }, read: { s3ped: 'incoming/1042' } } },
       ],
       [
         { flow: ['s3-lambda'], patch: { focus: ['s3ped', 'lambda', 'logs'], lamps: { lambda: 'ok' }, badges: ['D5'] } },
@@ -61,7 +61,7 @@ export const SCRIPTS: Record<string, Script> = {
         { pause: 0.9, patch: { lamps: { ec2a2: 'ok', ec2b2: 'ok' }, read: { ec2a2: '', ec2b2: '' } } },
       ],
       [
-        { burst: 10, flow: ['cli-cf'], patch: { focus: ['clientes', 'cloudfront', 'alb', 'albb', 'asg'], lamps: { cloudfront: 'ok' }, read: { cloudfront: 'HIT 90%' }, meters: { hit: 90 } } },
+        { burst: 10, flow: ['cli-cf'], patch: { focus: ['clientes', 'cloudfront', 'igw', 'alb', 'asg'], lamps: { cloudfront: 'ok' }, read: { cloudfront: 'HIT 90%' }, meters: { hit: 90 } } },
         { flow: ['cf-alb', 'alb-a1'], patch: { meters: { cpu: 68 }, alarms: ['cpu'], read: { asg: 'CPU 68%' } } },
         { pause: 0.5, patch: { ec2: [3, 3], lamps: { ec2a3: 'warn', ec2b3: 'warn' }, read: { ec2a3: 'arranca', ec2b3: 'arranca', asg: '6 de 6' }, meters: { ec2: 6, usd: 292 } } },
         { pause: 0.9, patch: { lamps: { ec2a3: 'ok', ec2b3: 'ok' }, read: { ec2a3: '', ec2b3: '' }, meters: { cpu: 48 } } },
@@ -85,7 +85,7 @@ export const SCRIPTS: Record<string, Script> = {
       [
         { patch: { failAz: true, focus: ['alb', 'albb', 'asg'], lamps: { ec2a1: 'fault', rdsa: 'fault', nat: 'fault', alb: 'fault' }, read: { ec2a1: 'falla', rdsa: 'FALLA' } } },
         { pause: 0.5, patch: { alarms: ['targets'] } },
-        { flow: ['cf-albb', 'alb-b1'], patch: { read: { albb: 'todo a 1b' } } },
+        { flow: ['cf-albb', 'alb-b1'], patch: { focus: ['cloudfront', 'igw', 'alb', 'albb', 'asg'], read: { albb: 'todo a 1b' } } },
       ],
       [
         { patch: { focus: ['rdsa', 'rdsb'], alarms: ['targets', 'failover'], lamps: { rdsb: 'warn' }, read: { rdsb: 'promoviendo' } } },
@@ -93,7 +93,7 @@ export const SCRIPTS: Record<string, Script> = {
         { patch: { focus: ['asg', 'rdsb'], ec2: [1, 2], lamps: { ec2b2: 'warn' }, read: { ec2b2: 'arranca' } } },
         { pause: 0.9, patch: { lamps: { ec2b2: 'ok' }, read: { ec2b2: '' } } },
       ],
-      [{ flow: ['cf-albb', 'alb-b1', 'b2-rdsb'], patch: { focus: ['albb', 'asg', 'rdsb'], alarms: [], read: { rdsb: 'RPO 0' } } }],
+      [{ flow: ['cf-albb', 'alb-b1', 'b1-rdsb'], patch: { focus: ['cloudfront', 'igw', 'albb', 'asg', 'rdsb'], alarms: [], read: { rdsb: 'RPO 0' } } }],
       [{ patch: { focus: ['nat', 'rdsb'], read: { nat: 'sin salida', rdsb: '+USD 26/mes' } } }],
     ],
   },
@@ -102,10 +102,10 @@ export const SCRIPTS: Record<string, Script> = {
     base: { lamps: { alb: 'ok' } },
     steps: [
       [{ patch: { attacker: true, focus: ['atacante', 'alb', 'rdsa', 'rdsb', 's3ped'] } }],
-      [{ flow: ['cli-cf', 'cf-alb'], patch: { attacker: true, focus: ['cloudfront', 'alb', 'clientes'], badges: ['D3'], read: { alb: 'solo CF' } } }],
+      [{ flow: ['cli-cf', 'cf-alb'], patch: { attacker: true, focus: ['clientes', 'cloudfront', 'igw', 'alb'], badges: ['D3'], read: { alb: 'solo CF' } } }],
       [{ flow: ['att-alb'], bad: true, patch: { attacker: true, blocks: ['sg-alb'], focus: ['atacante', 'alb', 'igw'] } }],
       [{ flow: ['att-data'], bad: true, patch: { attacker: true, blocks: ['sg-alb', 'sin-ruta'], focus: ['atacante', 'rdsa', 'rdsb'] } }],
-      [{ flow: ['app-s3'], bad: true, patch: { attacker: true, blocks: ['sg-alb', 'sin-ruta', 'iam-s3'], focus: ['asg', 'gwe', 's3ped', 'iam'], lamps: { s3ped: 'fault', ec2a1: 'ok' } } }],
+      [{ flow: ['app-s3'], patch: { attacker: true, blocks: ['sg-alb', 'sin-ruta', 'iam-s3'], focus: ['asg', 'gwe', 's3ped', 'iam'], lamps: { s3ped: 'fault', ec2a1: 'ok' }, read: { s3ped: 'DeleteObject' } } }],
       [{ patch: { attacker: true, focus: ['trail', 'iam', 'alb', 'rdsa', 's3ped'], lamps: { trail: 'ok' }, read: { trail: 'PutRolePolicy' } } }],
     ],
   },
@@ -148,7 +148,8 @@ export const SCRIPTS: Record<string, Script> = {
         { flow: ['lambda-s3'], patch: { read: { s3ped: '1 reporte', lambda: '' } } },
       ],
       [
-        { flow: ['app-s3'], patch: { focus: ['asg', 's3ped', 'lambda'], read: { s3ped: 'incoming/1042.txt' } } },
+        // Solo queda encendida la escritura: la vía S3 → Lambda se apaga porque esta vez no hay invocación.
+        { flow: ['app-s3'], patch: { focus: ['asg', 'gwe', 's3ped', 'lambda'], routes: ['app-s3'], read: { s3ped: 'incoming/1042.txt' } } },
         { pause: 0.6, patch: { lamps: { lambda: 'off' }, read: { lambda: 'sin invocar' } } },
       ],
     ],
@@ -158,16 +159,26 @@ export const SCRIPTS: Record<string, Script> = {
 const uniq = (xs: string[]) => [...new Set(xs)]
 
 export function applyBeat(s: PanelState, b: Beat): PanelState {
-  let next = b.patch ? apply(s, b.patch) : s
-  if (b.flow && !b.patch?.routes) next = { ...next, routes: uniq([...next.routes, ...b.flow]) }
-  if (b.flow && b.bad) next = { ...next, bad: uniq([...next.bad, ...b.flow]) }
-  return next
+  const next = b.patch ? apply(s, b.patch) : s
+  if (!b.flow) return next
+  return { ...next, routes: b.patch?.routes ? next.routes : uniq([...next.routes, ...b.flow]), now: uniq([...next.now, ...b.flow]) }
+}
+
+const flows = (beats: Beat[]) => uniq(beats.flatMap(b => b.flow ?? []))
+
+// Estado al empezar el paso: nada es todavía del paso (cada ruta se dibuja cuando el paquete la recorre)
+// y las rutas rechazadas ya están marcadas, para que se dibujen en rojo desde el primer tramo.
+export function stepStart(scene: string, step: number): PanelState {
+  const sc = SCRIPTS[scene]
+  let s = apply(NORMAL, sc.base)
+  for (let i = 0; i < step; i++) for (const b of sc.steps[i]) s = applyBeat(s, b)
+  const beats = sc.steps[step] ?? []
+  return { ...s, now: [], bad: uniq([...s.bad, ...flows(beats.filter(b => b.bad))]) }
 }
 
 // Estado del panel al terminar el paso `step` (o antes de empezar si step = -1).
 export function stateAt(scene: string, step: number): PanelState {
-  const sc = SCRIPTS[scene]
-  let s = apply(NORMAL, sc.base)
-  for (let i = 0; i <= step; i++) for (const b of sc.steps[i]) s = applyBeat(s, b)
+  let s = stepStart(scene, step)
+  for (const b of SCRIPTS[scene].steps[step] ?? []) s = applyBeat(s, b)
   return s
 }

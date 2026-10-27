@@ -51,7 +51,7 @@ export function App() {
           {META.autor} · {META.curso} · {META.universidad} · {META.fecha}
         </p>
         <nav className="np-actions" aria-label="Documento">
-          <a className="key wide lit" href={META.pdf} download="Brief-DigitalCafeLuna-SergioJunca.pdf">
+          <a className="key wide" href={META.pdf} download="Brief-DigitalCafeLuna-SergioJunca.pdf">
             <Icon n="pdf" /> Brief en PDF, 2 páginas
           </a>
           <a className="key wide" href="#decisiones">
@@ -216,7 +216,7 @@ export function App() {
               <ol className="assume">
                 {SUPUESTOS.map((s, i) => (
                   <li key={i}>
-                    {s.texto} <span className="val">Se valida {s.valida}.</span>
+                    <b>S{i + 1}.</b> {s.texto} <span className="val">Se valida {s.valida}.</span>
                   </li>
                 ))}
               </ol>
