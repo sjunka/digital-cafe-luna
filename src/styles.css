@@ -1499,6 +1499,18 @@ main {
   margin: 0 0 6px;
 }
 
+/* Lightbox del paso: penumbra sobre lo que no participa */
+.lightbox-veil {
+  fill: #0d1012;
+  opacity: 0.7;
+  animation: veil-in 0.4s ease-out;
+}
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* Guía de estudio (/demos/): reproductor de 20 s con viñetas, y la cadena de la decisión al lado */
 .demo {
   margin-top: 48px;

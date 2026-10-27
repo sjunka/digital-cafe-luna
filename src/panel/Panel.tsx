@@ -2,6 +2,7 @@ import { gsap } from 'gsap'
 import { useEffect, useId, useRef } from 'react'
 import { ALARMAS, PIEZAS } from '../content'
 import { ASG, BADGES, BLOCKS, CELDAS, CELDA_H, GHOSTS, MODS, PASOS_FIG, ROUTES, SLOT, SLOTS, TRACKS, ZONAS } from './geometry'
+import type { Spot } from './scenes'
 import type { Adapt, PanelState } from './state'
 import { reduced } from './motion'
 
@@ -13,6 +14,7 @@ interface Props {
   hl?: string[] // módulos resaltados por propagación (restricción o decisión elegida)
   hlBadges?: string[]
   svgRef?: React.Ref<SVGSVGElement>
+  spot?: Spot | null // velo oscuro con huecos en lo que explica el paso
 }
 
 const PRINT_ROUTES = ['cli-cf', 'cf-alb', 'alb-a1', 'a1-rdsa', 'app-s3', 's3-lambda', 'lambda-logs']
@@ -21,7 +23,7 @@ const TAG_TXT = { mantener: 'Mantener', cambiar: 'Cambiar', quitar: 'Quitar' } a
 const ZONA_A = new Set(['alb', 'nat', 'rdsa', 'ec2a1', 'ec2a2', 'ec2a3'])
 const H_LIVE = 740
 
-export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], svgRef }: Props) {
+export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], svgRef, spot }: Props) {
   const uid = useId().replace(/:/g, '')
   const live = variant === 'live'
   const focusOn = live && state.focus.length > 0
@@ -280,6 +282,7 @@ export function Panel({ state, variant, adapt, onTag, hl = [], hlBadges = [], sv
         ))}
 
       {live && <Instruments state={state} />}
+      {live && spot && <Lightbox spot={spot} uid={uid} />}
     </svg>
   )
 }
@@ -343,6 +346,42 @@ function Legend({ live }: { live: boolean }) {
       )}
       <rect x={x} y={r + (live ? 23 : 9)} width="16" height="11" rx="2" className="legend-badge" />
       <text x={x + 18} y={r + (live ? 32 : 18)} className="legend-t">decisión D1 a D5</text>
+    </g>
+  )
+}
+
+// Caja de un módulo, del ASG o de una ranura EC2.
+function caja(id: string) {
+  if (MODS[id]) return MODS[id]
+  if (id === 'asg') return ASG
+  const s = [...SLOTS.a, ...SLOTS.b].find(x => x.id === id)
+  return s ? { x: SLOT.x, y: s.y, w: SLOT.w, h: SLOT.h } : null
+}
+
+// Lightbox: todo queda en penumbra salvo lo que el paso explica; los bordes del hueco se difuminan.
+function Lightbox({ spot, uid }: { spot: Spot; uid: string }) {
+  const P = 9
+  return (
+    <g className="lightbox" aria-hidden="true">
+      <defs>
+        <filter id={`soft-${uid}`} x="-5%" y="-5%" width="110%" height="110%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+        <mask id={`spot-${uid}`} maskUnits="userSpaceOnUse" x={-1000} y={0} width={3000} height={H_LIVE}>
+          <rect x={-1000} width={3000} height={H_LIVE} fill="#fff" />
+          <g filter={`url(#soft-${uid})`}>
+            {spot.mods.map(id => {
+              const b = caja(id)
+              return b && <rect key={id} x={b.x - P} y={b.y - P} width={b.w + 2 * P} height={b.h + 2 * P} rx="8" fill="#000" />
+            })}
+            {spot.routes.map(r => (
+              <path key={r} d={ROUTES[r]} fill="none" stroke="#000" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" />
+            ))}
+            {spot.inst && <rect x={4} y={640} width={992} height={H_LIVE - 640} fill="#000" />}
+          </g>
+        </mask>
+      </defs>
+      <rect x={-1000} width={3000} height={H_LIVE} className="lightbox-veil" mask={`url(#spot-${uid})`} />
     </g>
   )
 }

@@ -182,3 +182,23 @@ export function stateAt(scene: string, step: number): PanelState {
   for (const b of SCRIPTS[scene].steps[step] ?? []) s = applyBeat(s, b)
   return s
 }
+
+// Lo que queda iluminado bajo el velo del paso: módulos en foco o que cambian, las rutas del paso y los
+// instrumentos si sus valores cambian. Sin nada que mostrar no hay velo.
+export interface Spot {
+  mods: string[]
+  routes: string[]
+  inst: boolean
+}
+
+export function spotAt(scene: string, step: number): Spot | null {
+  const beats = SCRIPTS[scene]?.steps[step]
+  if (!beats) return null
+  const mods = uniq([
+    ...stateAt(scene, step).focus,
+    ...beats.flatMap(b => [...(b.patch?.focus ?? []), ...Object.keys(b.patch?.lamps ?? {}), ...Object.keys(b.patch?.read ?? {})]),
+  ])
+  const routes = uniq(beats.flatMap(b => b.flow ?? []))
+  const inst = beats.some(b => b.patch?.meters || b.patch?.alarms)
+  return mods.length || routes.length ? { mods, routes, inst } : null
+}

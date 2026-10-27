@@ -3,7 +3,7 @@ import { DECISIONES, ESCENAS, ESLABONES, PIEZAS, RESTRICCIONES, type PiezaId } f
 import { GHOSTS, MODS, modsDe } from './geometry'
 import { playStep, reduced, resetMotion } from './motion'
 import { Panel } from './Panel'
-import { stateAt, stepStart } from './scenes'
+import { spotAt, stateAt, stepStart } from './scenes'
 import { ADAPT_VACIO, type Adapt, type PanelState, type Tag } from './state'
 import { Icon } from '../ui/Icon'
 
@@ -233,6 +233,7 @@ export function Stage({ apiRef }: { apiRef?: React.MutableRefObject<StageApi | n
           hl={hl.mods}
           hlBadges={adapt.on ? tocadas : hl.badges}
           svgRef={svgRef}
+          spot={adapt.on || hl.mods.length ? null : spotAt(IDS[pos.scene], pos.step)}
         />
       </div>
 

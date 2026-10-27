@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DECISIONES, DEMOS, ESCENAS, ESLABONES, META, RESTRICCIONES, type Decision } from './content'
 import { playStep, reduced, resetMotion } from './panel/motion'
 import { Panel } from './panel/Panel'
-import { stateAt, stepStart } from './panel/scenes'
+import { spotAt, stateAt, stepStart } from './panel/scenes'
 import { ADAPT_VACIO } from './panel/state'
 import { Icon } from './ui/Icon'
 
@@ -141,7 +141,7 @@ function Demo({ d }: { d: Decision }) {
       <div className="demo-grid">
         <figure className="demo-player" ref={boxRef}>
           <div className="demo-screen">
-            <Panel state={panel} variant="live" adapt={ADAPT_VACIO} svgRef={svgRef} hlBadges={[d.id]} />
+            <Panel state={panel} variant="live" adapt={ADAPT_VACIO} svgRef={svgRef} hlBadges={[d.id]} spot={chap >= 0 ? spotAt(d.escena, chap) : null} />
             {!playing && chap < 0 && (
               <button className="demo-start" onClick={play} aria-label={`Reproducir demo de ${d.id}`}>
                 <Icon n="play" /> Ver demo · 0:20
