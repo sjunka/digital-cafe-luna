@@ -11,6 +11,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { Brief } from './Brief'
+import { Demos } from './Demos'
 import { reduced } from './panel/motion'
 import './styles.css'
 
@@ -18,5 +19,7 @@ import './styles.css'
 const brief = new URLSearchParams(window.location.search).get('vista') === 'brief'
 document.documentElement.classList.toggle('print-view', brief)
 document.documentElement.classList.toggle('reduce', reduced())
+// /demos/ es una copia de este mismo index.html (deploy.sh): la guía de estudio con un demo por decisión.
+const demos = /\/demos(\/(index\.html)?)?$/.test(window.location.pathname)
 
-createRoot(document.getElementById('root')!).render(<StrictMode>{brief ? <Brief /> : <App />}</StrictMode>)
+createRoot(document.getElementById('root')!).render(<StrictMode>{brief ? <Brief /> : demos ? <Demos /> : <App />}</StrictMode>)

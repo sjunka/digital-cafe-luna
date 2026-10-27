@@ -1499,6 +1499,221 @@ main {
   margin: 0 0 6px;
 }
 
+/* Guía de estudio (/demos/): reproductor de 20 s con viñetas, y la cadena de la decisión al lado */
+.demo {
+  margin-top: 48px;
+}
+.demo-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.demo-player {
+  margin: 0;
+  background: var(--track);
+  border: 2px solid var(--track);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.demo-screen {
+  position: relative;
+  background: var(--panel);
+}
+.demo-start {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 24px;
+  background: var(--lit);
+  border: 2px solid var(--track);
+  border-radius: 4px;
+  color: var(--ink);
+  font: 700 21px/1 var(--cond);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 6px rgb(29 32 35 / 0.25);
+  cursor: pointer;
+}
+.demo-start:hover {
+  background: #ffc933;
+}
+.demo-cap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 14px;
+  background: var(--plate);
+  color: var(--plate-ink);
+}
+.demo-cap-n {
+  flex: none;
+  font: 700 15px var(--mono);
+  color: var(--seg-ink);
+}
+.demo-cap-l {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  background: var(--lit);
+  color: var(--ink);
+  font: 700 14px/1 var(--cond);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.demo-cap-t {
+  font: 600 clamp(17px, 1.5vw, 21px) / 1.25 var(--sans);
+  text-wrap: balance;
+}
+.demo-ctl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--desk);
+  border-top: 2px solid var(--track);
+}
+.demo-track {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  margin: 0 6px;
+  background: var(--tile);
+  border: 2px solid var(--track);
+  border-radius: 3px;
+}
+.demo-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--lit);
+}
+.demo-seg {
+  position: absolute;
+  top: -15px;
+  bottom: -15px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-left: 2px solid var(--track);
+  cursor: pointer;
+}
+.demo-seg:nth-child(2) {
+  border-left-color: transparent;
+}
+.demo-time {
+  font: 700 15px var(--mono);
+  white-space: nowrap;
+}
+.demo-chapters {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  background: var(--tile);
+  border-top: 2px solid var(--track);
+}
+.demo-chapters button {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 14px;
+  background: none;
+  border: 0;
+  border-left: 5px solid transparent;
+  color: var(--muted);
+  font: 400 16px/1.35 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+.demo-chapters button:hover {
+  background: #f6f7f4;
+}
+.demo-chapters .done button {
+  color: var(--ink-2);
+}
+.demo-chapters .now button {
+  border-left-color: var(--lit);
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+}
+.demo-ch-t {
+  flex: none;
+  width: 36px;
+  font: 400 13px var(--mono);
+}
+.demo-ch-l {
+  flex: none;
+  width: 104px;
+  font: 700 13px var(--cond);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.demo-side {
+  padding: 16px 18px;
+  background: var(--tile);
+  border: 2px solid var(--track);
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.demo-side p {
+  margin: 0;
+}
+.demo-r {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font: 600 15px var(--cond);
+  letter-spacing: 0.03em;
+}
+.demo-chain {
+  margin: 14px 0 0;
+}
+.demo-chain div {
+  padding: 8px 0 8px 12px;
+  border-left: 3px solid var(--track);
+}
+.demo-chain dt {
+  font: 700 13.5px var(--cond);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.demo-chain dd {
+  margin: 2px 0 0;
+}
+.demo-h {
+  margin: 18px 0 6px;
+  padding-top: 12px;
+  border-top: 1.5px dashed var(--muted);
+  font: 700 14px var(--cond);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.demo-qa details {
+  border-bottom: 1px solid var(--rule);
+}
+.demo-qa summary {
+  padding: 8px 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+.demo-qa details p {
+  padding: 0 0 10px 16px;
+  color: var(--ink-2);
+}
+@media (max-width: 1180px) {
+  .demo-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Tablero y pupitre caben en la primera pantalla: en 1280×720 se ven medidores, anunciadores y registrador. */
 @media (min-width: 1181px) {
   .stage-panel .panel {

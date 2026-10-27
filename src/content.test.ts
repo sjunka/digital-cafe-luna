@@ -16,6 +16,14 @@ describe('contenido del Brief', () => {
     for (const e of C.ESCENAS) expect(SCRIPTS[e.id]?.steps.length, e.id).toBe(e.pasos.length)
   })
 
+  it('cada demo tiene una viñeta por paso de la escena de su decisión', () => {
+    for (const d of C.DECISIONES) {
+      const e = C.ESCENAS.find(x => x.id === d.escena)
+      expect(C.DEMOS[d.id]?.vinetas.length, d.id).toBe(e?.pasos.length)
+      expect(C.DEMOS[d.id].preguntas.length, d.id).toBeGreaterThan(0)
+    }
+  })
+
   it('los guiones solo usan rutas y módulos que existen en el tablero', () => {
     const mods = new Set([...Object.keys(MODS), 'asg', 'ec2a1', 'ec2a2', 'ec2a3', 'ec2b1', 'ec2b2', 'ec2b3'])
     for (const [id, sc] of Object.entries(SCRIPTS))

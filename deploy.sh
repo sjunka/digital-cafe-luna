@@ -9,6 +9,7 @@ rm -rf .git
 git init -q
 git checkout -q -b gh-pages
 touch .nojekyll
+mkdir -p demos && cp index.html demos/index.html
 git add -A
 git commit -q -m "Publicar sitio y Brief"
 git push -f "$(git -C .. remote get-url origin)" gh-pages

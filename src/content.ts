@@ -381,6 +381,88 @@ export const ESCENAS: Escena[] = [
   },
 ]
 
+// Guía de estudio (/demos/): una viñeta corta por paso de la escena de cada decisión y las preguntas que puede hacer el profe.
+
+export const DEMOS: Record<string, { vinetas: string[]; preguntas: { q: string; a: string }[] }> = {
+  D1: {
+    vinetas: [
+      'Tráfico ×10 por pocos días, casi todo estático',
+      'No compro capacidad para el pico',
+      'La víspera, el mínimo del ASG sube de 2 a 4',
+      'CloudFront sirve 9 de 10; con CPU > 50% el ASG llega a 6',
+      'Al cerrar vuelve a 2 EC2: USD 292 → 173 al mes',
+      'Techo de 6: si el p95 pasa de 1 s, avisa SNS',
+    ],
+    preguntas: [
+      { q: '¿Y si el pico supera las 6 instancias?', a: 'La API se degrada, pero lo estático sigue en CloudFront. La alarma de p95 con el ASG en 6 avisa; subir el máximo es un update del stack de minutos, si el presupuesto lo permite.' },
+      { q: '¿Por qué subir el mínimo la víspera y no esperar al target tracking?', a: 'En el Lab 06 la alarma tardó dos periodos de 5 min y una EC2 nueva tarda minutos en atender. La fecha de la campaña se conoce: una acción programada llega antes que la métrica.' },
+      { q: '¿Por qué no toda la API en Lambda?', a: 'Exige rediseñar la app antes de la campaña. La API es continua; serverless queda para lo intermitente (D5).' },
+    ],
+  },
+  D2: {
+    vinetas: [
+      'Ningún pedido confirmado se puede perder',
+      'Dos AZ y el estado fuera de las EC2, en RDS Multi-AZ',
+      'Cae us-east-1a: el ALB manda todo a 1b',
+      'RDS promueve el standby; el ASG repone en 1b',
+      'Venta de nuevo en 1 a 2 min, RPO 0',
+      'USD 26 al mes más; sin NAT no hay parches, pero se vende',
+    ],
+    preguntas: [
+      { q: '¿Por qué un balanceador solo no recupera capacidad?', a: 'El ALB solo manda tráfico a targets sanos; el que repone instancias es el ASG (Lab 02).' },
+      { q: '¿Por qué health check de tipo ELB?', a: 'El de tipo EC2 solo ve la instancia detenida; con ELB, el ASG también reemplaza una app colgada que no responde.' },
+      { q: '¿Qué debe ser cierto de la app para reemplazar instancias sin perder nada?', a: 'Que sea stateless: sesión en cookie firmada, carrito en la base, archivos en S3 y app en la AMI.' },
+      { q: '¿Por qué RDS y no DynamoDB o PostgreSQL en EC2?', a: 'Pedidos relacionales con transacciones y un equipo que sabe SQL. En EC2 operaría réplica, backups y parches; DynamoDB obliga a remodelar por patrones de acceso.' },
+      { q: '¿Versionar en S3 no es respaldo?', a: 'Protege objetos, no la base. La base se respalda con restauración a un punto y copia a us-east-2 (Lab 03).' },
+    ],
+  },
+  D3: {
+    vinetas: [
+      'Datos de clientes: todo lo expuesto es superficie de ataque',
+      'CloudFront es la única puerta pública',
+      'Directo al ALB: su SG solo acepta a CloudFront, timeout',
+      'La base no tiene IP pública ni ruta desde Internet',
+      'DeleteObject llega por el endpoint, pero IAM lo niega',
+      'Más reglas que mantener; CloudTrail audita los cambios',
+    ],
+    preguntas: [
+      { q: '¿Por qué un solo NAT si la resiliencia pesa más que el costo?', a: 'Porque vender no depende de él: la AMI trae la app, el token de la base se firma localmente, S3 va por el gateway endpoint y el pago entra como webhook. Si la pasarela exigiera llamadas salientes, pondría un NAT por AZ (USD 37 más).' },
+      { q: '¿Cómo pruebas que el ALB no es accesible directo?', a: 'Un curl al DNS del ALB da timeout; por CloudFront responde 200 (Lab 04: sin la regla entre SG, timeout).' },
+      { q: '¿Llegar a S3 no basta para escribir?', a: 'No: la red decide quién llega e IAM qué puede hacer. En el Lab 05, con el mismo rol, GetObject pasó y PutObject dio AccessDenied.' },
+    ],
+  },
+  D4: {
+    vinetas: [
+      'Equipo pequeño: lo manual no se repite igual',
+      'Todo en CloudFormation; cada alarma con acción',
+      'El change set muestra los reemplazos antes de aplicar',
+      'Las alarmas llegan por SNS al turno, con runbook',
+      'Cada cambio queda repetible y auditado',
+      'Menos portable; lo manual aparece como drift',
+    ],
+    preguntas: [
+      { q: '¿Por qué CloudFormation y no Terraform?', a: 'Una sola nube y un equipo pequeño: CloudFormation guarda el estado por mí. Terraform es portable, pero obliga a custodiar el archivo de estado.' },
+      { q: '¿Qué te enseñó el Lab 06 sobre las alarmas?', a: 'La alarma llegó a ALARM, pero sin acciones solo informaba. Por eso cada alarma del diseño escala el ASG o avisa por SNS a un responsable.' },
+      { q: '¿Qué es drift?', a: 'La diferencia entre el template y lo que existe en la cuenta: un cambio hecho a mano en la consola. CloudFormation lo detecta.' },
+    ],
+  },
+  D5: {
+    vinetas: [
+      'Reportes intermitentes: no compiten con la API',
+      'Por evento: S3 ObjectCreated → Lambda',
+      'incoming/1042.json invoca la Lambda, asíncrona',
+      'Reporte y log con el mismo id, sin tocar las EC2',
+      'Evento repetido: mismo archivo, un solo reporte',
+      'Un .txt o archive/ no invocan, como en el Lab 07',
+    ],
+    preguntas: [
+      { q: '¿Qué hace la Lambda si llega el mismo evento dos veces?', a: 'Escribe el mismo reports/<id>.json: queda uno solo. Si falla tras los reintentos, la alarma de errores avisa y se reprocesa desde incoming/; el pedido está a salvo en RDS.' },
+      { q: '¿Por qué no un proceso en las EC2?', a: 'Competiría con la API justo en el pico, y una VM dedicada estaría encendida para un trabajo intermitente.' },
+      { q: '¿Qué pasa si falta el permiso de invocación?', a: 'S3 rechaza la notificación (Unable to validate the following destination configurations), como en el Lab 07.' },
+    ],
+  },
+}
+
 // Modo adaptación: piezas de la tabla de evolución que se pueden agregar al panel durante la defensa.
 
 export const PIEZAS = [
