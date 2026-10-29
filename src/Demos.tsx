@@ -21,7 +21,7 @@ export function Demos() {
           <span className="np-doc">Guía de estudio · las 5 decisiones en 20 s</span>
         </h1>
         <p className="np-thesis">
-          Cada demo recorre la escena de una decisión en el tablero: restricción, decisión, mecanismo, consecuencia y trade-off. Al lado, la cadena completa y las preguntas probables del profesor.
+          Cada demo recorre la escena de una decisión en el tablero: restricción, decisión, mecanismo, consecuencia y trade-off. Al lado, la cadena completa y preguntas frecuentes.
         </p>
         <nav className="np-actions" aria-label="Decisiones">
           {DECISIONES.map(d => (
@@ -215,7 +215,7 @@ function Demo({ d }: { d: Decision }) {
           </ul>
           <h3 className="demo-h">Evidencia</h3>
           <p>{d.evidencia}</p>
-          <h3 className="demo-h">Si el profesor pregunta</h3>
+          <h3 className="demo-h">Preguntas frecuentes</h3>
           <div className="demo-qa">
             {preguntas.map(p => (
               <details key={p.q}>

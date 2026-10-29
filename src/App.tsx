@@ -57,9 +57,6 @@ export function App() {
           <a className="key wide" href="#decisiones">
             Las 5 decisiones
           </a>
-          <a className="key wide" href="./demos/">
-            Demos de 20 s
-          </a>
         </nav>
       </header>
 
